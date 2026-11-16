@@ -24,7 +24,13 @@ export interface InvoiceDetail extends Invoice {
   duplicateGroup: InvoiceSummary[];
 }
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+// Browser: NEXT_PUBLIC_API_URL ("" in production = same origin, /api behind the proxy).
+// Server components: API_INTERNAL_URL lets them call the API container directly.
+const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+export const API_URL =
+  typeof window === "undefined"
+    ? (process.env.API_INTERNAL_URL ?? PUBLIC_API_URL)
+    : PUBLIC_API_URL;
 
 export class ApiError extends Error {
   constructor(

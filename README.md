@@ -44,6 +44,25 @@ Environment variables (all optional):
 | `WEB_ORIGIN`          | `http://localhost:3000`     | API (CORS) |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:3001`     | Web        |
 
+## Deploy (Docker Compose)
+
+`docker-compose.yml` runs three containers:
+- `caddy` serves HTTPS with a Let's Encrypt certificate.
+- `web` is the Next.js standalone server.
+- `api` is NestJS, with SQLite on the `invoices-data` volume.
+
+The browser calls `/api` on the same origin, so no CORS is needed.
+
+On a server with Docker, after pointing the domain's A record at it:
+
+```bash
+git clone https://github.com/aliasghar-me/invoice-approval-desk.git && cd invoice-approval-desk
+echo "DOMAIN=invoices.example.com" > .env
+docker compose up -d --build
+```
+
+To update to the latest code, run `git pull && docker compose up -d --build`. The database volume is kept.
+
 ## API
 
 | Method  | Path                | Notes |
