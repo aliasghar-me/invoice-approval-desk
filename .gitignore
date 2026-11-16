@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# SQLite database (created and seeded on first start)
+apps/api/data/
+
+.env*
+!.env.example
+.DS_Store
+*.log

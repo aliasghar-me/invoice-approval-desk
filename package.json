@@ -1,0 +1,24 @@
+{
+  "name": "invoice-approval-desk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mini invoice approval desk: Next.js web (3000) + NestJS API (3001) + SQLite.",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"npm run start:dev -w api\" \"npm run dev -w web\"",
+    "build": "npm run build -w api && npm run build -w web",
+    "start": "concurrently -k -n api,web -c cyan,magenta \"npm run start:prod -w api\" \"npm run start -w web\"",
+    "test": "npm run test -w api && npm run test:e2e -w api",
+    "typecheck": "tsc --noEmit -p apps/api && npm exec -w web -- next typegen && tsc --noEmit -p apps/web",
+    "db:reset": "rm -rf apps/api/data"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.7"
+  }
+}
