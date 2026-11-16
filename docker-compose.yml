@@ -1,5 +1,9 @@
-# Production stack: Caddy (HTTPS) -> web (Next.js) and /api -> api (NestJS + SQLite volume).
-# Usage on the server:  echo DOMAIN=invoices.example.com > .env && docker compose up -d --build
+# Base stack: web (Next.js) and api (NestJS + SQLite volume). No public ports here;
+# add a proxy layer with COMPOSE_FILE (see README "Deploy"):
+#   docker-compose.caddy.yml    fresh server, Caddy owns 80/443
+#   docker-compose.traefik.yml  server that already runs Traefik
+name: invoice-desk
+
 services:
   api:
     build: { context: ., target: api }
@@ -20,22 +24,5 @@ services:
       API_INTERNAL_URL: http://api:3001
     depends_on: [api]
 
-  caddy:
-    image: caddy:2.10-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    environment:
-      DOMAIN: ${DOMAIN}
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on: [web, api]
-
 volumes:
   invoices-data:
-  caddy-data:
-  caddy-config:

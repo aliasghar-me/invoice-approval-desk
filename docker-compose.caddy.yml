@@ -1,0 +1,20 @@
+# Fresh server: Caddy terminates HTTPS (Let's Encrypt) and routes /api -> api, rest -> web.
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [web, api]
+
+volumes:
+  caddy-data:
+  caddy-config:

@@ -46,18 +46,22 @@ Environment variables (all optional):
 
 ## Deploy (Docker Compose)
 
-`docker-compose.yml` runs three containers:
-- `caddy` serves HTTPS with a Let's Encrypt certificate.
+`docker-compose.yml` runs two containers:
 - `web` is the Next.js standalone server.
 - `api` is NestJS, with SQLite on the `invoices-data` volume.
 
-The browser calls `/api` on the same origin, so no CORS is needed.
+A proxy layer on top serves HTTPS and routes `/api` to the API and everything else to the web app. The browser calls `/api` on the same origin, so no CORS is needed. Choose the proxy layer with `COMPOSE_FILE` in `.env`:
 
-On a server with Docker, after pointing the domain's A record at it:
+| Server | `COMPOSE_FILE` |
+| ------ | -------------- |
+| Fresh server (Caddy takes ports 80/443, Let's Encrypt) | `docker-compose.yml:docker-compose.caddy.yml` |
+| Already runs Traefik (`websecure` entrypoint, `letsencrypt` resolver) | `docker-compose.yml:docker-compose.traefik.yml` |
+
+Point the domain's A record at the server, then:
 
 ```bash
 git clone https://github.com/aliasghar-me/invoice-approval-desk.git && cd invoice-approval-desk
-echo "DOMAIN=invoices.example.com" > .env
+printf 'DOMAIN=invoices.example.com\nCOMPOSE_FILE=docker-compose.yml:docker-compose.traefik.yml\n' > .env
 docker compose up -d --build
 ```
 
