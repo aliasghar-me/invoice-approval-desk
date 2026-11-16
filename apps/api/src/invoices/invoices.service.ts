@@ -43,7 +43,7 @@ const SELECT_INVOICE = `
            ORDER BY s.id LIMIT 1) AS approved_sibling_id
     FROM invoices i`;
 
-/** "ACME Office Supplies" and "Acme Office-Supplies" are the same vendor. */
+/** "FERNHILL Office Supplies" and "Fernhill Office-Supplies" are the same vendor. */
 export function vendorKeyOf(vendor: string): string {
   return vendor
     .normalize('NFKC')

@@ -9,11 +9,11 @@ import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 
 // Seed ids, in insertion order (see src/invoices/seed.service.ts).
-const ACME = 1; // approved
+const FERNHILL = 1; // approved
 const NORTHWIND = 2; // rejected
 const BLUE_HARBOR = 3; // needs_review
 const SUMMIT = 4; // processing
-const ACME_DUPLICATE = 5; // duplicate of #1, forced to needs_review
+const FERNHILL_DUPLICATE = 5; // duplicate of #1, forced to needs_review
 
 async function startApp(dbPath: string): Promise<INestApplication<App>> {
   process.env.DB_PATH = dbPath;
@@ -62,7 +62,7 @@ describe('Invoices API', () => {
         .expect(200);
       expect(res.body.map((i: { id: number }) => i.id).sort()).toEqual([
         BLUE_HARBOR,
-        ACME_DUPLICATE,
+        FERNHILL_DUPLICATE,
       ]);
     });
 
@@ -71,7 +71,7 @@ describe('Invoices API', () => {
         .get('/api/invoices?status=approved,rejected')
         .expect(200);
       expect(res.body.map((i: { id: number }) => i.id).sort()).toEqual([
-        ACME,
+        FERNHILL,
         NORTHWIND,
       ]);
     });
@@ -152,7 +152,7 @@ describe('Invoices API', () => {
     it('refuses to leave a terminal status', async () => {
       for (const status of ['processing', 'needs_review', 'rejected']) {
         await http()
-          .patch(`/api/invoices/${ACME}`)
+          .patch(`/api/invoices/${FERNHILL}`)
           .send({ status })
           .expect(409);
       }
@@ -166,7 +166,7 @@ describe('Invoices API', () => {
 
     it('refuses setting the same status again', async () => {
       const res = await http()
-        .patch(`/api/invoices/${ACME}`)
+        .patch(`/api/invoices/${FERNHILL}`)
         .send({ status: 'approved' })
         .expect(409);
       expect(res.body.code).toBe('STATUS_UNCHANGED');
@@ -209,38 +209,38 @@ describe('Invoices API', () => {
   describe('duplicate invoices', () => {
     it('links the duplicate to the original and sends it to review', async () => {
       const res = await http()
-        .get(`/api/invoices/${ACME_DUPLICATE}`)
+        .get(`/api/invoices/${FERNHILL_DUPLICATE}`)
         .expect(200);
       expect(res.body).toMatchObject({
-        vendor: 'ACME Office Supplies',
+        vendor: 'FERNHILL Office Supplies',
         invoiceNumber: 'INV 1042',
         status: 'needs_review',
-        duplicateOfId: ACME,
+        duplicateOfId: FERNHILL,
         allowedTransitions: ['rejected'],
-        approvalBlockedReason: expect.stringContaining(`#${ACME}`),
-        duplicateGroup: [{ id: ACME, status: 'approved' }],
+        approvalBlockedReason: expect.stringContaining(`#${FERNHILL}`),
+        duplicateGroup: [{ id: FERNHILL, status: 'approved' }],
       });
 
-      const original = await http().get(`/api/invoices/${ACME}`).expect(200);
+      const original = await http().get(`/api/invoices/${FERNHILL}`).expect(200);
       expect(original.body.duplicateGroup).toEqual([
-        expect.objectContaining({ id: ACME_DUPLICATE }),
+        expect.objectContaining({ id: FERNHILL_DUPLICATE }),
       ]);
     });
 
     it('refuses to approve a duplicate of an approved invoice', async () => {
       const res = await http()
-        .patch(`/api/invoices/${ACME_DUPLICATE}`)
+        .patch(`/api/invoices/${FERNHILL_DUPLICATE}`)
         .send({ status: 'approved' })
         .expect(409);
       expect(res.body).toMatchObject({
         code: 'DUPLICATE_ALREADY_APPROVED',
-        approvedInvoiceId: ACME,
+        approvedInvoiceId: FERNHILL,
       });
     });
 
     it('allows rejecting the duplicate', async () => {
       await http()
-        .patch(`/api/invoices/${ACME_DUPLICATE}`)
+        .patch(`/api/invoices/${FERNHILL_DUPLICATE}`)
         .send({ status: 'rejected' })
         .expect(200);
     });

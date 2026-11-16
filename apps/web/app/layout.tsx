@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
+import { Toaster } from "@/components/toaster";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Invoice Approval Desk",
-  description: "Review, approve and reject incoming invoices.",
+  title: "Invoice Desk",
+  description: "Review, approve and reject incoming vendor invoices, and catch duplicates before they are paid twice.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -25,14 +27,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex h-14 max-w-4xl items-center px-4 sm:px-6">
-            <Link href="/" className="text-sm font-semibold tracking-tight text-slate-900">
-              Invoice Approval Desk
-            </Link>
-          </div>
-        </header>
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+        <Toaster>
+          <header className="border-b border-border">
+            <div className="mx-auto flex h-12 w-full max-w-[1152px] items-center gap-3 px-4 sm:px-6">
+              <Link href="/" className="flex items-center gap-2 font-medium text-ink">
+                <BrandMark />
+                Invoice Desk
+              </Link>
+              <span className="text-control" aria-hidden="true">
+                /
+              </span>
+              <span className="text-muted">Accounts payable</span>
+            </div>
+          </header>
+          <main className="mx-auto w-full max-w-[1152px] flex-1 px-4 pb-16 pt-8 sm:px-6">
+            {children}
+          </main>
+        </Toaster>
       </body>
     </html>
   );

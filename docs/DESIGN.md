@@ -54,7 +54,7 @@ The table lives in one place, `apps/api/src/invoices/status-machine.ts`. The ser
 
 ## Duplicates
 
-- **Match rule:** same `vendor_key` and same `number_key`. "ACME Office Supplies / INV 1042" matches "Acme Office Supplies / INV-1042".
+- **Match rule:** same `vendor_key` and same `number_key`. "FERNHILL Office Supplies / INV 1042" matches "Fernhill Office Supplies / INV-1042".
 - **On ingest:** the new invoice gets `duplicate_of_id` set to the oldest match, and is forced into `needs_review` no matter what status it arrived with.
 - **On approve:** refused if any other invoice in the same group is already approved. The rule is symmetric: if the copy is approved first, the original can no longer be approved either. Rejecting is always allowed.
 - **In the UI:** a badge in the list, a banner on the detail page that links to the other invoice(s), and a disabled Approve button with the reason.

@@ -1,86 +1,164 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { ApiError, updateInvoiceStatus, type InvoiceStatus } from "@/lib/api";
-import { STATUS_LABEL } from "@/lib/format";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { Invoice, InvoiceStatus } from "@/lib/api";
+import { STATUS_LABEL, formatDateTime, formatMoney } from "@/lib/format";
+import { useDecision } from "@/lib/use-decision";
 
 interface Props {
-  id: number;
-  status: InvoiceStatus;
-  allowedTransitions: InvoiceStatus[];
-  approvalBlockedReason: string | null;
+  invoice: Invoice;
+  next: { id: number; vendor: string } | null;
 }
 
-function disabledReason(status: InvoiceStatus, approvalBlockedReason: string | null, to: InvoiceStatus) {
-  if (status === "processing") return "Still processing. Send it to review before deciding.";
-  if (status === "approved" || status === "rejected")
-    return `Already ${STATUS_LABEL[status].toLowerCase()}. Decisions are final.`;
-  if (to === "approved" && approvalBlockedReason) return approvalBlockedReason;
-  return null;
-}
+const BTN =
+  "inline-flex h-9 w-full items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed";
 
-export function ReviewActions({ id, status, allowedTransitions, approvalBlockedReason }: Props) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+/**
+ * The decision panel. Approve is the screen's one primary. Both decisions are final, so each asks
+ * once with the amount and vendor in words. Keys: A approve, R reject, Esc cancel.
+ */
+export function ReviewActions({ invoice, next }: Props) {
+  const { decide, pending, error } = useDecision();
+  const [confirming, setConfirming] = useState<InvoiceStatus | null>(null);
+  const can = (to: InvoiceStatus) => invoice.allowedTransitions.includes(to);
+  const amount = formatMoney(invoice.amountCents, invoice.currency);
+  const what = `#${invoice.id} ${invoice.vendor}`;
+  const decided = invoice.status === "approved" || invoice.status === "rejected";
+  const blocked = invoice.approvalBlockedReason !== null;
 
-  const can = (to: InvoiceStatus) => allowedTransitions.includes(to);
-  const reason =
-    disabledReason(status, approvalBlockedReason, "approved") ??
-    disabledReason(status, approvalBlockedReason, "rejected");
-
-  function move(to: InvoiceStatus) {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await updateInvoiceStatus(id, to);
-      } catch (err) {
-        setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
-      }
-      // Re-read from the API either way, so the page shows the stored state.
-      router.refresh();
-    });
-  }
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      if (e.metaKey || e.ctrlKey || e.altKey || target.closest("input, textarea, select")) return;
+      const k = e.key.toLowerCase();
+      if (k === "escape") setConfirming(null);
+      else if (k === "a" && can("approved")) setConfirming("approved");
+      else if (k === "r" && can("rejected")) setConfirming("rejected");
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   return (
-    <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5">
-      <h2 className="text-sm font-semibold text-slate-900">Decision</h2>
-      <div className="mt-3 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => move("approved")}
-          disabled={pending || !can("approved")}
-          className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
-        >
-          Approve
-        </button>
-        <button
-          type="button"
-          onClick={() => move("rejected")}
-          disabled={pending || !can("rejected")}
-          className="rounded-md bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
-        >
-          Reject
-        </button>
-        {can("needs_review") && (
+    <section aria-labelledby="decision-heading" className="rounded-lg border border-border bg-surface p-5">
+      <h2 id="decision-heading" className="font-medium">
+        Decision
+      </h2>
+
+      {decided && (
+        <p className="mt-2 text-sm text-muted">
+          {STATUS_LABEL[invoice.status]} on <span className="num">{formatDateTime(invoice.updatedAt)}</span>{" "}
+          UTC. Decisions are final.
+        </p>
+      )}
+
+      {invoice.status === "processing" && (
+        <>
+          <p className="mt-2 text-sm text-muted">
+            Still being processed. Send it to review to approve or reject it.
+          </p>
           <button
             type="button"
-            onClick={() => move("needs_review")}
-            disabled={pending}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+            disabled={pending || !can("needs_review")}
+            onClick={() => decide(invoice.id, "needs_review", what)}
+            className={`${BTN} mt-4 bg-primary text-white hover:bg-black disabled:opacity-60`}
           >
-            Send to review
+            {pending ? "Saving…" : "Send to review"}
           </button>
-        )}
-      </div>
+        </>
+      )}
 
-      {reason && <p className="mt-3 text-sm text-slate-600">{reason}</p>}
-      {pending && <p className="mt-3 text-sm text-slate-500" role="status">Saving…</p>}
+      {invoice.status === "needs_review" && !confirming && (
+        <>
+          {/* When approving would pay twice, rejecting is the job: it takes the primary. */}
+          <div className={`mt-4 grid gap-2 ${blocked ? "[&>*:first-child]:order-2" : ""}`}>
+            <button
+              type="button"
+              onClick={() => setConfirming("approved")}
+              disabled={!can("approved")}
+              aria-describedby={blocked ? "approve-blocked" : undefined}
+              className={`${BTN} ${
+                blocked
+                  ? "border border-dashed border-control bg-surface text-muted"
+                  : "bg-primary text-white hover:bg-black"
+              }`}
+            >
+              Approve {amount}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming("rejected")}
+              disabled={!can("rejected")}
+              className={`${BTN} ${
+                blocked ? "bg-primary text-white hover:bg-black" : "bg-raised text-ink hover:bg-active"
+              }`}
+            >
+              {blocked ? "Reject duplicate" : "Reject"}
+            </button>
+          </div>
+          {blocked && (
+            <p
+              id="approve-blocked"
+              className="mt-3 rounded-md border border-warn-edge bg-warn-bg px-3 py-2 text-sm text-warn-ink"
+            >
+              Approve is off. {invoice.approvalBlockedReason}
+            </p>
+          )}
+          <p className="mt-3 hidden text-xs text-muted md:block">
+            Keyboard: <kbd className="font-sans font-medium text-ink">A</kbd> approve,{" "}
+            <kbd className="font-sans font-medium text-ink">R</kbd> reject
+          </p>
+        </>
+      )}
+
+      {invoice.status === "needs_review" && confirming && (
+        <div className="mt-3" role="group" aria-label="Confirm decision">
+          <p className="text-sm">
+            {confirming === "approved" ? "Approve" : "Reject"}{" "}
+            <span className="num font-medium">{amount}</span> from {invoice.vendor}?{" "}
+            <span className="text-muted">This can’t be undone.</span>
+          </p>
+          <div className="mt-3 grid gap-2">
+            <button
+              type="button"
+              autoFocus
+              disabled={pending}
+              onClick={() => decide(invoice.id, confirming, what)}
+              className={`${BTN} text-white ${
+                confirming === "approved" ? "bg-primary hover:bg-black" : "bg-negative hover:bg-neg-ink"
+              } disabled:opacity-60`}
+            >
+              {pending ? "Saving…" : confirming === "approved" ? "Confirm approve" : "Confirm reject"}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setConfirming(null)}
+              className={`${BTN} text-muted hover:bg-raised hover:text-ink`}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {error && (
-        <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
+        <p className="mt-3 rounded-md bg-neg-bg px-3 py-2 text-sm text-neg-ink" role="alert">
           {error}
         </p>
+      )}
+
+      {next && (
+        <Link
+          href={`/invoices/${next.id}`}
+          className="mt-4 flex items-center justify-between gap-3 border-t border-rule pt-4 text-sm text-muted hover:text-ink"
+        >
+          <span>
+            Next to review: <span className="font-medium text-ink">#{next.id} {next.vendor}</span>
+          </span>
+          <span aria-hidden="true">→</span>
+        </Link>
       )}
     </section>
   );

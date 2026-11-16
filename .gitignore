@@ -13,3 +13,6 @@ apps/api/data/
 !.env.example
 .DS_Store
 *.log
+
+# design tooling output
+.taste-skill/

@@ -9,6 +9,28 @@ A small web app where a team reviews invoices: a list split into **Processing**,
 
 The schema, the status model, the duplicate rule and what was left out are in **[docs/DESIGN.md](docs/DESIGN.md)**.
 
+Live demo: **https://invoices.txonix.com**
+
+## The UI
+
+**List screen**
+- **First line:** the one fact that needs attention. For the sample data, that's the duplicate that would be paid twice, with a link to it.
+- **Money by stage:** the amount waiting for review is the largest figure. A bar shows how all money received splits across the four statuses.
+- **Tabs and counts:** the three tabs carry counts, and each view comes from the API's `?status=` filter.
+- **Deciding in place:** Needs-review rows have Approve and Reject buttons, each with a confirmation step. A duplicate whose original is already approved has Approve disabled.
+
+**Detail screen**
+- **Decision panel:** the primary action is the one the invoice needs. For a blocked duplicate that is **Reject duplicate**, with Approve disabled and the reason shown.
+- **Keyboard:** <kbd>A</kbd> approves, <kbd>R</kbd> rejects and <kbd>Esc</kbd> cancels.
+- **After a decision:** a link to the next invoice waiting for review.
+- **Status path:** a drawing of where the invoice is in the status flow.
+- **Duplicate comparison:** for a flagged duplicate, a field-by-field table against the original, showing why it was flagged.
+
+**Everywhere**
+- Each change is confirmed by a toast, and the page re-reads from the API so it shows what was actually stored.
+- There are loading, empty, not-found and error states.
+- On a phone, the table becomes two-line rows.
+
 ## Run it
 
 Requires **Node.js 24 or newer** (developed on Node 26). No Docker, no database server.
@@ -98,11 +120,11 @@ curl -X PATCH localhost:3001/api/invoices/5 \
 
 | #  | Vendor               | Invoice #   | Amount    | Status                        |
 | -- | -------------------- | ----------- | --------- | ----------------------------- |
-| 1  | Acme Office Supplies | INV-1042    | $1,250.00 | approved                      |
+| 1  | Fernhill Office Supplies | INV-1042    | $1,250.00 | approved                      |
 | 2  | Northwind Logistics  | NW-88213    | $4,780.50 | rejected                      |
 | 3  | Blue Harbor Catering | BH-2026-117 | $865.00   | needs_review                  |
 | 4  | Summit Cloud Hosting | SCH-55019   | $2,399.99 | processing                    |
-| 5  | ACME Office Supplies | INV 1042    | $1,250.00 | needs_review, duplicate of #1 |
+| 5  | FERNHILL Office Supplies | INV 1042    | $1,250.00 | needs_review, duplicate of #1 |
 
 #5 is the same invoice as #1, typed differently. It came in after #1 was already approved. The app:
 

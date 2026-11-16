@@ -3,13 +3,13 @@ import type { NewInvoice } from './invoice.types.js';
 import { InvoicesService } from './invoices.service.js';
 
 /**
- * Five sample invoices. The last one is the same Acme invoice as the first, typed
- * differently ("ACME", "INV 1042"), and arrives after the first was already approved.
+ * Five sample invoices. The last one is the same Fernhill invoice as the first, typed
+ * differently ("FERNHILL", "INV 1042"), and arrives after the first was already approved.
  * Ingest links it to #1 and sends it to needs_review, and the API refuses to approve it.
  */
 export const SEED_INVOICES: NewInvoice[] = [
   {
-    vendor: 'Acme Office Supplies',
+    vendor: 'Fernhill Office Supplies',
     invoiceNumber: 'INV-1042',
     amountCents: 125_000,
     invoiceDate: '2026-10-02',
@@ -37,7 +37,7 @@ export const SEED_INVOICES: NewInvoice[] = [
     status: 'processing',
   },
   {
-    vendor: 'ACME Office Supplies',
+    vendor: 'FERNHILL Office Supplies',
     invoiceNumber: 'INV 1042',
     amountCents: 125_000,
     invoiceDate: '2026-10-02',

@@ -1,15 +1,95 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/*
+ * Achromatic ledger: no colour in the chrome. Ink for money and counts, one hue (--hue) on the
+ * main data element only (the money waiting for review), pale pairs for status.
+ * Face: a ledger blue-grey ground instead of the kit's #f8f8f8.
+ */
 :root {
   color-scheme: light;
+
+  --ground: #f2f4f7;
+  --surface: #ffffff;
+  --raised: #eef0f3;
+  --active: #e6e9ee;
+  --border: #e3e6ea;
+  --rule: #eef0f2;
+  --control: #d4d7dc;
+
+  --text: #0a0a0a;
+  --muted: #5f6368;
+  --primary: #141414;
+  --hue: #1d5fbf;
+
+  --positive: #2e7d32;
+  --negative: #c4242a;
+  --pill-positive-bg: #dcfae5;
+  --pill-positive-ink: #04250e;
+  --pill-negative-bg: #ffedea;
+  --pill-negative-ink: #831c1e;
+  --pill-warning-bg: #fffbeb;
+  --pill-warning-ink: #92400e;
+  --pill-warning-edge: #fde68a;
+  --pill-neutral-bg: #eeeeee;
+  --pill-neutral-ink: #3d3d3d;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-active: var(--active);
+  --color-border: var(--border);
+  --color-rule: var(--rule);
+  --color-control: var(--control);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-hue: var(--hue);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-pos-bg: var(--pill-positive-bg);
+  --color-pos-ink: var(--pill-positive-ink);
+  --color-neg-bg: var(--pill-negative-bg);
+  --color-neg-ink: var(--pill-negative-ink);
+  --color-warn-bg: var(--pill-warning-bg);
+  --color-warn-ink: var(--pill-warning-ink);
+  --color-warn-edge: var(--pill-warning-edge);
+  --color-neutral-bg: var(--pill-neutral-bg);
+  --color-neutral-ink: var(--pill-neutral-ink);
 }
 
 body {
-  background: var(--color-slate-50);
-  color: var(--color-slate-900);
+  background: var(--ground);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--hue);
+  outline-offset: 2px;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
