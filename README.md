@@ -9,7 +9,7 @@ A small web app where a team reviews invoices: a list split into **Processing**,
 
 The schema, the status model, the duplicate rule and what was left out are in **[docs/DESIGN.md](docs/DESIGN.md)**.
 
-Live demo: **https://invoices.txonix.com**
+Live demo: **https://invoices.aliasghar.me**
 
 ## The UI
 
